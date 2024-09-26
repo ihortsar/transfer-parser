@@ -22,8 +22,4 @@ class ServiceClass
         return self::$serviceTypes[$serviceName] ?? "";
     }
 
-    public static function getAllServiceTypes()
-    {
-        return self::$serviceTypes;
-    }
 }

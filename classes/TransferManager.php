@@ -1,16 +1,7 @@
 <?php
+include 'Patterns.php';
 class TransferManager
 {
-
-    private $patterns;
-    private $serviceClass;
-
-    public function __construct(Patterns $patterns, ServiceClass $serviceClass)
-    {
-        $this->patterns = $patterns;
-        $this->serviceClass = $serviceClass;
-    }
-
 
     public function checkForDeparture($text)
     {
@@ -26,7 +17,10 @@ class TransferManager
             return;
         }
         $oneWayBooking = $this->extractValues($text, 'one way');
-        echo json_encode(['description' => 'its a one way booking', 'details' => $oneWayBooking]);
+        echo json_encode([
+            'description' => 'oneWay',
+            'details' => $oneWayBooking
+        ]);
     }
 
 
@@ -36,8 +30,7 @@ class TransferManager
         $newBookingFinal = $this->extractValues($newBooking, 'new booking');
 
         echo json_encode([
-            'modification' => true,
-            'description' => 'its a modified booking',
+            'description' => 'modification',
             'details' => $newBookingFinal
         ]);
     }
@@ -49,31 +42,26 @@ class TransferManager
         $return = substr($text, $twoBookingsSeparator);
         $secondBooking = $this->extractValues($return, 'second booking');
         $firstBooking = $this->extractValues($oneWay, 'first booking');
-
         echo json_encode([
-            'details1' => $firstBooking,
-            'details2' => $secondBooking,
-            'description' => 'its a 2-way booking'
+            'details' => [$firstBooking, $secondBooking],
+            'description' => 'roundTrip'
         ]);
     }
 
 
     private function extractValues($text, $type)
     {
-        $patterns =  $this->patterns->getPatterns();
+        $patterns =  Patterns::$patterns;
         $transfer = new TransferInfo();
         foreach ($patterns as $key => $pattern) {
             if (preg_match($pattern, $text, $matches)) {
-                $cleanedMatch =   $this->patterns->removeUnnesecerySpaces(($matches));
-                if ($key === 'flightDestination') {
-                    $text = preg_replace('/To:\s*' . preg_quote($matches[1]) . '/', '', $text);
-                }
-                $this->patterns->setProperty($transfer, $key, $cleanedMatch, $matches);
+                $key === 'phoneArranger' ? $transfer->$key = Patterns::editPhoneNumber($matches[1] . $matches[2]) : $transfer->$key = Patterns::removeUnnesecerySpaces(($matches[1]));
+                $text = ($key === 'flightDestination') ? preg_replace('/To:\s*' . preg_quote($matches[1]) . '/', '', $text) : $text;
             } else {
                 $transfer->$key = '';
             }
         }
-        $transfer->serviceClass =  $this->serviceClass->getServiceCode($transfer->vehicleType);
+        $transfer->serviceClass = ServiceClass::getServiceCode($transfer->vehicleType);
         $transfer->transferType = $type;
         return $transfer;
     }

@@ -3,16 +3,14 @@ include 'pdfparser-master/alt_autoload.php-dist';
 include 'classes/TransferInfo.php';
 include 'classes/TransferManager.php';
 include 'classes/ServiceClass.php';
-include 'classes/Patterns.php';
 
 
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 
-$patterns = new Patterns();
 $serviceClass = new ServiceClass();
-$transferManager = new TransferManager($patterns, $serviceClass);
+$transferManager = new TransferManager($serviceClass);
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $destination = "uploads/" . $_FILES['pdf']['name'];
