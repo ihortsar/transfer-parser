@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $destination = "uploads/" . $_FILES['pdf']['name'];
     move_uploaded_file($_FILES['pdf']['tmp_name'], $destination);
     $text = parsePDF($destination);
-    $transferManager->checkForDeparture($text);
+    $transferManager->splitBookings($text);
 }
 
 

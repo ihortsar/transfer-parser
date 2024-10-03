@@ -33,12 +33,13 @@ class TransferInfo
     public $vehicleType = "";
     public $flightOrigin = "";
     public $flightDestination = "";
-    public $flightArrival = "";
-    public $flightDeparture = "";
+    public $flightArrivalTime = "";
+    public $flightDepartTime = "";
     public $flightNumber = "";
     public $airportTransferFromTo = "";
     public $ModeExpedia = "";
     public $VIP = "";
     public $CustomerID = "";
     public $CityPriceID = "";
+    public $bookingType=""; 
 }

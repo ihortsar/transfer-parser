@@ -8,7 +8,7 @@ class ServiceClass
         'Sport Utility Vehicle' => 'SUV',
         'Luxury Car' => 'LX',
         'Shuttle' => 'SH',
-        'Minibus' => 'MB',
+        'Minivan' => 'MV',
         'Extra Large' => 'XL',
         'Economy Class' => 'EC',
         'Business Class' => 'BC',
