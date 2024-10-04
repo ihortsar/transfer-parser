@@ -14,12 +14,12 @@ class ServiceClass
         'Business Class' => 'BC',
         'Transfer Service' => 'TR',
         'Medium car' => 'MC',
-        'Private car'=> 'PC'
+        'Private car' => 'PC',
+        'Unescorted van' => 'UV'
     ];
 
     public static function getServiceCode($serviceName)
     {
         return self::$serviceTypes[$serviceName] ?? "";
     }
-
 }

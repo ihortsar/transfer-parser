@@ -22,7 +22,7 @@ class Patterns
         'flightDestination' => '/To:\s*([A-Z]{3})/',
         'caseInvoice' => '/SERVICE ID:\s*([0-9-]+)-/',
         'remarks' => '/AD\+([0-9]+)/i',
-        'toTransfer' => '/To\s*:\s*([a-zÀ-Ÿ0-9\s,.:-]+?)(?=\s*Transport|\s*From:|\s*$)/i',
+        'toTransfer' => '/To\s*:\s*([a-zÀ-Ÿ0-9\s,.:-]+?)(?=\s*Transport|\s*From:|\s*$|\s*Page)/i',
         'vehicleType' => '/Vehicle\s*:\s*([a-z\s]+? )(?=\s*Paxes)/i',
         'bookingType' => '/-{2,}\s*([a-z]+)\s*-{2,}/i',
     ];
@@ -47,7 +47,6 @@ class Patterns
         'dresden' => 'Dresden',
         'essen' => 'Essen',
         'frankfurt' => 'Frankfurt',
-        'freiburg' => 'Freiburg',
         'hanover' => 'Hannover',
         'köln' => 'Köln',
         'koeln' => 'Köln',
