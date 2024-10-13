@@ -1,29 +1,26 @@
 <?php
 include 'pdfparser-master/alt_autoload.php-dist';
-include 'classes/TransferInfo.php';
-include 'classes/TransferManager.php';
-include 'classes/ServiceClass.php';
-
-
+require 'includes/autoload.php';
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 
-$serviceClass = new ServiceClass();
-$transferManager = new TransferManager($serviceClass);
+$transferController = new TransferController();
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $destination = "uploads/" . $_FILES['pdf']['name'];
     move_uploaded_file($_FILES['pdf']['tmp_name'], $destination);
     $text = parsePDF($destination);
-    $transferManager->splitBookings($text);
+    $transferController->splitBookings($text);
 }
 
 
-function parsePDF($file_path)
+function parsePDF($filePath)
 {
     $parser = new \Smalot\PdfParser\Parser();
-    $pdf = $parser->parseContent(file_get_contents($file_path));
+    // Parses the PDF content and extract text
+    $pdf = $parser->parseContent(file_get_contents($filePath));
+    // Extracts text from the PDF and replace newlines with spaces
     $text = $pdf->getText();
     $text = str_replace("\n", " ", $text);
     return $text;

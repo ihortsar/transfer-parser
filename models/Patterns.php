@@ -3,9 +3,9 @@
 class Patterns
 {
 
-    public static $patternsBookings = [
+    public static $patternsBooking = [
         'mainContact' => '/Name:\s*([a-zÀ-Ÿ0-9\s,.\'-]+?)(?=TO\.Ref)/i',
-        'phone' => '/mobile\s*contact:\s*([0-9]+)/i',
+        'phone' => '/mobile\s*contact:\s*([0-9\+]+)/i',
         'bookingConf' => '/-+\s*(\w+)\s*-+/i ',
         'arrival' => '/Arrival:\s*([0-9a-z,-:]+)/i',
         'departure' => '/Departure:\s*([0-9a-z,-:]+)/i',
@@ -15,7 +15,7 @@ class Patterns
         'fromTransfer' => '/From\s*:\s*([a-zÀ-Ÿ0-9\s,:.-]+?)(?=Pickup)/i',
         'pickupDate' => '/Up\s*Time\s*:\s*([0-9\/]+)/i',
         'pickupTime' => '/Up\s*Time\s*:\s*[0-9\/]+\s*([0-9:]+)/i',
-        'flightNumber' => '/Transport:\s*([A-Z]{1,5}\s*[0-9]{1,9})/',
+        'flightNumber' => '/Transport:\s*([A-Z\s]{1,5}\s*[0-9\s]{1,9})/',
         'flightDepartTime' => '/Time\s*of\s*Depart.:\s*([0-9\:]+?)(?=\s*hrs)/i',
         'flightArrivalTime' => '/Arrival\s*Time\s*:\s*([0-9\:]+?)(?=\s*hrs)/i',
         'flightOrigin' => '/hrs\s*From:\s*([A-Z]{3})/',
@@ -32,8 +32,6 @@ class Patterns
         'contactPerson' => '/^\s*([a-z]+)/i',
         'email' => '/email\s*:\s*([a-zÀ-Ÿ0-9\@.-_]+?)(?=\s*supplier)/i',
         'phoneArranger' => '/Tel\s*:\s*\(\+([0-9]+)\)\s*([0-9]+)/i',
-
-
     ];
 
 
@@ -53,6 +51,7 @@ class Patterns
         'leipzig' => 'Leipzig',
         'münchen' => 'München',
         'muenchen' => 'München',
+        'munich' => 'München',
         'nuernberg' => 'Nürnberg',
         'nuremberg' => 'Nürnberg',
         'stuttgart' => 'Stuttgart',
@@ -66,10 +65,16 @@ class Patterns
         return preg_replace('/\s+/', ' ', $rawMatchesString);
     }
 
-
+    /**
+     * Removes spaces in the phone number.
+     * Splits the cleaned phone number into four segments.
+     * Returns the formatted phone number with the format `00XX XXX XXX XXXX`.
+     * @param string $phoneNumber The original phone number string that may contain extra spaces.
+     * @return string The formatted phone number.
+     */
     public static function editPhoneNumber($phoneNumber)
     {
-        $cleanedMatch = preg_replace('/\s+/', ' ', $phoneNumber);
+        $cleanedMatch = preg_replace('/\s+/', '', $phoneNumber);
         $pref1 = substr($cleanedMatch, 0, 2);
         $pref2 = substr($cleanedMatch, 2, 3);
         $pref3 = substr($cleanedMatch, 5, 3);
