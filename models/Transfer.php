@@ -46,6 +46,13 @@ class Transfer
     public $CityPriceID = "";
     public $bookingType = "";
 
+
+    private $pricesTransfer;
+    public function __construct(PricesTransferInterface $pricesTransfer)
+    {
+        $this->pricesTransfer = $pricesTransfer;
+    }
+
     /**
      * Extracts the values from the given booking text and header text using predefined patterns.
      * Maps these values to the appropriate fields in the transfer instance and assigns prices.
@@ -58,12 +65,11 @@ class Transfer
     {
         $patternsBooking =  Patterns::$patternsBooking;
         $patternsHeader =  Patterns::$patternsHeader;
-        $transfer = new Transfer();
-        $this->patternsBookingMapping($patternsBooking, $text, $transfer);
-        $this->patternsHeaderMapping($patternsHeader, $headerText, $transfer);
-        $transfer->serviceClass = ServiceClass::getServiceCode($transfer->vehicleType);
-        $this->assignTransfersPrices($transfer);
-        return $transfer;
+        $this->patternsBookingMapping($patternsBooking, $text);
+        $this->patternsHeaderMapping($patternsHeader, $headerText);
+        $this->serviceClass = ServiceClass::getServiceCode($this->vehicleType);
+        $this->pricesTransfer->assignTransfersPrices($this);
+        return $this;
     }
 
     /**
@@ -74,15 +80,15 @@ class Transfer
      * @param Transfer $transfer The Transfer object to store the extracted values.
      * @return void
      */
-    private function patternsBookingMapping($patternsBooking, $text, $transfer)
+    private function patternsBookingMapping($patternsBooking, $text)
     {
         foreach ($patternsBooking as $key => $pattern) {
             if (preg_match($pattern, $text, $matches)) {
-                $transfer->$key = Patterns::removeUnnesecerySpaces(($matches[1]));
+                $this->$key = Patterns::removeUnnesecerySpaces(($matches[1]));
                 $text = ($key === 'flightDestination') ?
                     preg_replace('/To:\s*' . preg_quote($matches[1]) . '/', '', $text) : $text;
             } else {
-                $transfer->$key = '';
+                $this->$key = '';
             }
         }
     }
@@ -96,64 +102,15 @@ class Transfer
      * @param Transfer $transfer The Transfer object to store the extracted values.
      * @return void
      */
-    private function patternsHeaderMapping($patternsHeader, $headerText, $transfer)
+    private function patternsHeaderMapping($patternsHeader, $headerText)
     {
         foreach ($patternsHeader as $key => $pattern) {
             if (preg_match($pattern, $headerText, $matches)) {
-                $key === 'phoneArranger' ? $transfer->$key = Patterns::editPhoneNumber($matches[1] . $matches[2]) :
-                    $transfer->$key = Patterns::removeUnnesecerySpaces(($matches[1]));
+                $key === 'phoneArranger' ? $this->$key = Patterns::editPhoneNumber($matches[1] . $matches[2]) :
+                    $this->$key = Patterns::removeUnnesecerySpaces(($matches[1]));
             } else {
-                $transfer->$key = '';
+                $this->$key = '';
             }
-        }
-    }
-
-    /**
-     * Assigns transfer prices from the database based on the city, vehicle type, and airport.
-     * 
-     * @param Transfer $transfer The transfer object to assign prices to.
-     * @return void
-     */
-    private function assignTransfersPrices($transfer)
-    {
-        $prices = $transfer->getPriceDetails($this->getCity($transfer), trim($transfer->vehicleType), $this->getAirport($transfer));
-        $transfer->fixPriceClient = isset($prices['price_tdl']) ? $prices['price_tdl'] : '';
-        $transfer->fixPriceGTcontractor = isset($prices['price_gt']) ? $prices['price_gt'] : '';
-        $transfer->GTU = isset($prices['tdl_id']) ? $prices['tdl_id'] : '';
-    }
-
-    /**
-     * Retrieves the city name from the toTransfer or fromTransfer fields.
-     * 
-     * @param Transfer $transfer The transfer object with the booking details.
-     * @return string The extracted city name.
-     */
-    private function getCity($transfer)
-    {
-        if (!empty($transfer->flightArrivalTime)) {
-            $words = explode(' ', trim($transfer->toTransfer));
-        } else {
-            $words = explode(' ', trim($transfer->fromTransfer));
-        }
-        $city = trim(array_pop($words));
-        if (isset(Patterns::$cityMappings[strtolower($city)])) {
-            return ucwords(Patterns::$citiesVariations[strtolower($city)]);
-        }
-        return ucwords($city);
-    }
-
-    /**
-     * Retrieves the appropriate airport (either flightDestination or flightOrigin based on flightArrivalTime presence).
-     * 
-     * @param Transfer $transfer The transfer object containing flight details.
-     * @return string The airport code.
-     */
-    private function getAirport($transfer)
-    {
-        if (!empty($transfer->flightArrivalTime)) {
-            return $transfer->flightDestination;
-        } else {
-            return  $transfer->flightOrigin;
         }
     }
 
@@ -167,32 +124,5 @@ class Transfer
     public function assignTransferTypeIfRoundTrip($firstBooking, $secondBooking)
     {
         $secondBooking->bookingType = $firstBooking->bookingType;
-    }
-
-    /**
-     * Retrieves price details from the database based on the city, vehicle type, and airport.
-     * 
-     * @param string $city The city for which the prices are retrieved.
-     * @param string $vehicleType The vehicle type.
-     * @param string $airport The airport code.
-     * @return array|null Returns the prices as an associative array, or null if not found.
-     */
-    public function getPriceDetails($city, $vehicleType, $airport)
-    {
-        $conn = require './includes/db.php';
-        $sql = 'SELECT * FROM ota_518580 WHERE city LIKE :city AND vehicle= :vehicle AND airport=:airport';
-        $stmt = $conn->prepare($sql);
-        $city = '%' . $city . '%';
-        $stmt->bindParam(':city', $city);
-        $stmt->bindParam(':vehicle', $vehicleType);
-        $stmt->bindParam(':airport', $airport);
-        if ($stmt->execute()) {
-            $prices = $stmt->fetch(PDO::FETCH_ASSOC);
-            if ($prices) {
-                return  $prices;
-            } else {
-                return null;
-            }
-        }
     }
 }

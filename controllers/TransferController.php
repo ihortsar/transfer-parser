@@ -2,17 +2,17 @@
 
 /**
  * Class TransferController handles the logic for processing multiple transfer bookings, including splitting the bookings,
- * handling round trips, modifications, and one-way transfers. It uses the Transfer class to map and extract
+ * handling round trips, modifications and one-way transfers. It uses the Transfer class to map and extract
  * values from booking text and stores the processed bookings in an array.
  */
 class TransferController
 {
-    private $transfer;
+    private $pricesTransfer;
     private $allBookings = [];
 
-    public function __construct()
+    public function __construct(PricesTransferInterface $pricesTransfer)
     {
-        $this->transfer = new Transfer();
+        $this->pricesTransfer = $pricesTransfer;
     }
 
     /**
@@ -59,13 +59,15 @@ class TransferController
         } elseif ($roundTripSeparator !== false) {
             $this->handleRoundTrip($booking, $roundTripSeparator, $header);
         } else {
-            $oneWayBooking = $this->transfer->extractValues($booking, $header);
+            $transfer = new Transfer($this->pricesTransfer);
+            $oneWayBooking = $transfer->extractValues($booking, $header);
             $this->allBookings[] = [
                 'description' => 'oneWay',
                 'details' => $oneWayBooking
             ];
         }
     }
+
 
     /**
      * Handles modified bookings by extracting new booking details and storing them.
@@ -77,8 +79,9 @@ class TransferController
      */
     private function handleModifiedBooking($text, $oldBookingPosition, $header)
     {
+        $transfer = new Transfer($this->pricesTransfer);
         $newBooking = substr($text, 0, $oldBookingPosition);
-        $newBookingFinal = $this->transfer->extractValues($newBooking, $header);
+        $newBookingFinal = $transfer->extractValues($newBooking, $header);
         $this->allBookings[] = [
             'description' => 'modification',
             'details' => $newBookingFinal
@@ -95,11 +98,13 @@ class TransferController
      */
     private function handleRoundTrip($text, $roundTripSeparator, $header)
     {
+        $transfer1 = new Transfer($this->pricesTransfer);
+        $transfer2 = new Transfer($this->pricesTransfer);
         $oneWay = substr($text, 0, $roundTripSeparator);
         $return = substr($text, $roundTripSeparator);
-        $firstBooking = $this->transfer->extractValues($oneWay, $header);
-        $secondBooking = $this->transfer->extractValues($return, $header);
-        $this->transfer->assignTransferTypeIfRoundTrip($firstBooking, $secondBooking);
+        $firstBooking = $transfer1->extractValues($oneWay, $header);
+        $secondBooking = $transfer2->extractValues($return, $header);
+        $transfer1->assignTransferTypeIfRoundTrip($transfer1,  $transfer2);
         $this->allBookings[] = [
             'description' => 'roundTrip',
             'details' => [$firstBooking, $secondBooking]
