@@ -1,44 +1,51 @@
 <?php
 
-/**
- * Class TransferController handles the logic for processing multiple transfer bookings, including splitting the bookings,
- * handling round trips, modifications and one-way transfers. It uses the Transfer class to map and extract
- * values from booking text and stores the processed bookings in an array.
- */
+
 class TransferController
 {
     private $pricesTransfer;
     private $allBookings = [];
-
-    public function __construct(PricesTransferInterface $pricesTransfer)
+    public $text;
+    public function __construct(PricesTransferInterface $pricesTransfer, string $text)
     {
         $this->pricesTransfer = $pricesTransfer;
+        $this->text = $text;
+    }
+
+    /**
+     * Iterates through each splitted booking.
+     * After processing, outputs the processed bookings in JSON format to the frontend.
+     * @return void     
+     */
+    public function processBookings()
+    {
+        list($bookings, $header) = $this->splitBookings();
+        foreach ($bookings as $booking) {
+            $this->processBooking($booking, $header);
+        }
+        echo json_encode($this->allBookings, JSON_PRETTY_PRINT);
     }
 
     /**
      * Splits the booking text into individual bookings and processes them.
      * 
      * @param string $text The full booking text from a PDF.
-     * @return void
+     * @return array An array containing the individual bookings and the header.     
      */
-    public function splitBookings($text)
+    public function splitBookings()
     {
-        $referenceCount = substr_count($text, 'REFERENCE');
-        $header = $this->splitHeaderFromPDF($text);
-        if ($referenceCount > 1) {
-            $firstReferencePos = strpos($text, 'REFERENCE');
-            $secondReferencePos = strpos($text, 'REFERENCE', $firstReferencePos + strlen('REFERENCE'));
-            $firstBooking = substr($text, 0, $secondReferencePos);
-            $this->processBooking($firstBooking, $header);
-            $remainingText = substr($text, $secondReferencePos + strlen('REFERENCE'));
-            $bookings = explode('REFERENCE', $remainingText);
-            foreach ($bookings as $booking) {
-                $this->processBooking('REFERENCE' . $booking, $header);
-            }
+        $header = $this->splitHeaderFromPDF($this->text);
+        $firstReferencePos = strpos($this->text, 'REFERENCE');
+        $secondReferencePos = strpos($this->text, 'REFERENCE', $firstReferencePos + strlen('REFERENCE'));
+        $firstBooking = substr($this->text, 0, $secondReferencePos);
+        if ($secondReferencePos !== false) {
+            $remainingText = substr($this->text, $secondReferencePos + strlen('REFERENCE'));
+            $remainingBookings = explode('REFERENCE', $remainingText);
+            $bookings = array_merge([$firstBooking], $remainingBookings);
+            return [$bookings, $header];
         } else {
-            $this->processBooking($text, $header);
+            return [[$this->text], $header];
         }
-        echo json_encode($this->allBookings, JSON_PRETTY_PRINT);
     }
 
     /**
@@ -71,16 +78,15 @@ class TransferController
 
     /**
      * Handles modified bookings by extracting new booking details and storing them.
-     * 
      * @param string $text The booking text.
      * @param int $oldBookingPosition Position where the old booking details begin in the text.
      * @param string $header The header text.
      * @return void
      */
-    private function handleModifiedBooking($text, $oldBookingPosition, $header)
+    private function handleModifiedBooking($booking, $oldBookingPosition, $header)
     {
         $transfer = new Transfer($this->pricesTransfer);
-        $newBooking = substr($text, 0, $oldBookingPosition);
+        $newBooking = substr($booking, 0, $oldBookingPosition);
         $newBookingFinal = $transfer->extractValues($newBooking, $header);
         $this->allBookings[] = [
             'description' => 'modification',
@@ -96,12 +102,12 @@ class TransferController
      * @param string $header The header text.
      * @return void
      */
-    private function handleRoundTrip($text, $roundTripSeparator, $header)
+    private function handleRoundTrip($booking, $roundTripSeparator, $header)
     {
         $transfer1 = new Transfer($this->pricesTransfer);
         $transfer2 = new Transfer($this->pricesTransfer);
-        $oneWay = substr($text, 0, $roundTripSeparator);
-        $return = substr($text, $roundTripSeparator);
+        $oneWay = substr($booking, 0, (int)$roundTripSeparator);
+        $return = substr($booking, (int)$roundTripSeparator);
         $firstBooking = $transfer1->extractValues($oneWay, $header);
         $secondBooking = $transfer2->extractValues($return, $header);
         $transfer1->assignTransferTypeIfRoundTrip($transfer1,  $transfer2);
@@ -117,10 +123,10 @@ class TransferController
      * @param string $text The full booking text.
      * @return string The extracted header section.
      */
-    private function splitHeaderFromPDF($text)
+    private function splitHeaderFromPDF()
     {
-        $firstReferencePos = strpos($text, 'REFERENCE');
-        $header = substr($text, 0, $firstReferencePos);
+        $firstReferencePos = strpos($this->text, 'REFERENCE');
+        $header = substr($this->text, 0, $firstReferencePos);
         return $header;
     }
 

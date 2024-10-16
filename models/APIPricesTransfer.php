@@ -1,4 +1,5 @@
 <?php
+/**class for testing dependency inversion */
 class APIPricesTransfer implements PricesTransferInterface
 {
 
